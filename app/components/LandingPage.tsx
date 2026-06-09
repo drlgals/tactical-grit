@@ -28,6 +28,7 @@ function DogTag() {
         alt="Dog tag Tactical Grit — O cronômetro está rodando. Em breve, a data que vai mudar o seu calendário."
         width={840}
         height={1188}
+        sizes="(max-width: 640px) 55vw, 420px"
         priority={false}
         style={{
           width: 'clamp(180px, 55vw, 420px)',
