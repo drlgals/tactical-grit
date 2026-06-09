@@ -25,11 +25,14 @@ const GREEN = '#00ff41';
 const GREEN_DIM = '#00843a';
 const GLOW = `0 0 6px ${GREEN}, 0 0 18px #00cc33, 0 0 36px #007a1f`;
 
+type PrePhase = 'entry' | 'transmitting' | 'screen-off' | 'terminal';
+
+/* ── Tela "INICIANDO TRANSMISSÃO" ─────────────────────────── */
 function TransmittingScreen() {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
-      style={{ background: '#000a02', animation: 'transmit-appear 2s ease-in-out forwards' }}
+      style={{ background: '#000a02', animation: 'transmit-appear 2.5s ease-in-out forwards' }}
     >
       {/* Scanlines */}
       <div className="absolute inset-0 pointer-events-none" style={{
@@ -70,7 +73,7 @@ function TransmittingScreen() {
             height: '100%',
             background: GREEN,
             boxShadow: `0 0 8px ${GREEN}`,
-            animation: 'transmit-bar 1.8s linear forwards',
+            animation: 'transmit-bar 2.2s linear forwards',
           }} />
         </div>
 
@@ -83,6 +86,33 @@ function TransmittingScreen() {
             verticalAlign: 'middle',
           }} />
         </p>
+      </div>
+    </div>
+  );
+}
+
+/* ── Tela terminal: cursor piscando + digitação ──────────── */
+function TerminalScreen({ text }: { text: string }) {
+  return (
+    <div className="fixed inset-0 z-50 bg-black" style={{ fontFamily: MONO }}>
+      <div
+        className="absolute top-5 left-5 sm:top-7 sm:left-8 flex items-center"
+        style={{ fontSize: 'clamp(11px, 2.5vw, 15px)', letterSpacing: '0.06em' }}
+      >
+        {text && (
+          <span style={{ color: GREEN, textShadow: `0 0 5px ${GREEN}` }}>{text}</span>
+        )}
+        {/* cursor sempre visível no terminal */}
+        <span style={{
+          display: 'inline-block',
+          width: '0.55em',
+          height: '1.05em',
+          background: GREEN,
+          boxShadow: `0 0 6px ${GREEN}`,
+          verticalAlign: 'text-bottom',
+          marginLeft: text ? '2px' : '0',
+          animation: 'cursor-blink 0.6s step-end infinite',
+        }} />
       </div>
     </div>
   );
@@ -164,9 +194,10 @@ function Separator() {
 }
 
 export default function LandingPage() {
+  const [prePhase, setPrePhase] = useState<PrePhase>('entry');
   const [entered, setEntered] = useState(false);
-  const [crtOn, setCrtOn] = useState(false);
-  const [transmitting, setTransmitting] = useState(false);
+  const [videoVisible, setVideoVisible] = useState(false);
+  const [terminalText, setTerminalText] = useState('');
   const [videoEnded, setVideoEnded] = useState(false);
   const [countdownVisible, setCountdownVisible] = useState(false);
   const [timeLeft, setTimeLeft] = useState(getTimeLeft());
@@ -191,34 +222,58 @@ export default function LandingPage() {
     osc.stop(ctx.currentTime + 0.04);
   }, []);
 
+  /* ── Fluxo de entrada ──────────────────────────────────────
+     0ms     → transmitting (aparece imediatamente)
+     2500ms  → screen-off  (CRT desligando, 600ms)
+     3100ms  → terminal    (cursor pisca, depois digita)
+     5200ms  → entered=true (vídeo com fade-in)
+  ─────────────────────────────────────────────────────────── */
   const handleEnter = async () => {
     const ctx = new AudioContext();
     if (ctx.state === 'suspended') await ctx.resume();
     audioCtxRef.current = ctx;
 
-    // 1. Dispara animação CRT
-    setCrtOn(true);
-
-    // 2. CRT some → tela de transmissão aparece
-    setTimeout(() => {
-      setCrtOn(false);
-      setTransmitting(true);
-    }, 1700);
-
-    // 3. Transmissão encerra → vídeo começa (~3700ms total)
-    setTimeout(() => {
-      setTransmitting(false);
-      setEntered(true);
-      videoRef.current?.play().catch(() => {});
-    }, 3700);
+    setPrePhase('transmitting');
+    setTimeout(() => setPrePhase('screen-off'), 2500);
+    setTimeout(() => setPrePhase('terminal'), 3100);
+    setTimeout(() => setEntered(true), 5200);
   };
+
+  // Efeito de digitação durante a fase terminal
+  useEffect(() => {
+    if (prePhase !== 'terminal') return;
+    setTerminalText('');
+    let i = 0;
+    const FULL = 'conecting...';
+    // Cursor pisca ~700ms sozinho antes de começar a digitar
+    const startTimer = setTimeout(() => {
+      const ticker = setInterval(() => {
+        i++;
+        setTerminalText(FULL.slice(0, i));
+        if (i >= FULL.length) clearInterval(ticker);
+      }, 90);
+      return () => clearInterval(ticker);
+    }, 700);
+    return () => clearTimeout(startTimer);
+  }, [prePhase]);
+
+  // Fade-in do vídeo após entered=true
+  useEffect(() => {
+    if (!entered) return;
+    videoRef.current?.play().catch(() => {});
+    // Dois frames garantem que o elemento está no DOM com opacity:0
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setVideoVisible(true));
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [entered]);
 
   // Fade-out de áudio nos últimos 2s do vídeo
   const handleTimeUpdate = () => {
     const video = videoRef.current;
     if (!video || !video.duration) return;
     const remaining = video.duration - video.currentTime;
-    const FADE_DURATION = 2; // segundos
+    const FADE_DURATION = 2;
     if (remaining <= FADE_DURATION) {
       video.volume = Math.max(0, remaining / FADE_DURATION);
     }
@@ -237,7 +292,7 @@ export default function LandingPage() {
     return () => clearInterval(id);
   }, [videoEnded]);
 
-  // Intersection observer for fade-in
+  // Intersection observer para fade-in do countdown
   useEffect(() => {
     const el = countdownRef.current;
     if (!el) return;
@@ -261,8 +316,9 @@ export default function LandingPage() {
 
   return (
     <div className="bg-black min-h-screen">
+
       {/* ── Tela de entrada: estética fósforo / CRT ── */}
-      {!entered && (
+      {!entered && prePhase === 'entry' && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden select-none"
           style={{ background: '#000a02', animation: 'phosphor-flicker 9s infinite' }}
@@ -287,22 +343,20 @@ export default function LandingPage() {
           {/* Conteúdo */}
           <div
             className="relative flex flex-col items-center gap-6 px-8"
-            style={{ zIndex: 10, fontFamily: 'var(--font-geist-mono), monospace' }}
+            style={{ zIndex: 10, fontFamily: MONO }}
           >
-            {/* Linha decorativa */}
-            <p style={{ color: '#00843a', textShadow: '0 0 6px #00ff41', fontSize: '10px', letterSpacing: '0.35em', opacity: 0.65 }}>
+            <p style={{ color: GREEN_DIM, textShadow: `0 0 6px ${GREEN}`, fontSize: '10px', letterSpacing: '0.35em', opacity: 0.65 }}>
               ══════════════════════════
             </p>
 
-            <p style={{ color: '#00843a', textShadow: '0 0 8px #00ff41', fontSize: '9px', letterSpacing: '0.45em', opacity: 0.7 }}>
+            <p style={{ color: GREEN_DIM, textShadow: `0 0 8px ${GREEN}`, fontSize: '9px', letterSpacing: '0.45em', opacity: 0.7 }}>
               SISTEMA TÁTICO OPERACIONAL
             </p>
 
-            {/* Título principal */}
             <p
               style={{
-                color: '#00ff41',
-                textShadow: '0 0 6px #00ff41, 0 0 18px #00cc33, 0 0 38px #007a1f',
+                color: GREEN,
+                textShadow: `0 0 6px ${GREEN}, 0 0 18px #00cc33, 0 0 38px #007a1f`,
                 fontSize: 'clamp(16px, 5vw, 22px)',
                 letterSpacing: '0.65em',
                 fontWeight: 700,
@@ -311,15 +365,14 @@ export default function LandingPage() {
               TACTICAL&nbsp;GRIT
             </p>
 
-            <p style={{ color: '#00843a', textShadow: '0 0 6px #00ff41', fontSize: '10px', letterSpacing: '0.35em', opacity: 0.65 }}>
+            <p style={{ color: GREEN_DIM, textShadow: `0 0 6px ${GREEN}`, fontSize: '10px', letterSpacing: '0.35em', opacity: 0.65 }}>
               ══════════════════════════
             </p>
 
-            <p style={{ color: '#00843a', fontSize: '8px', letterSpacing: '0.3em', opacity: 0.5, marginTop: '4px' }}>
+            <p style={{ color: GREEN_DIM, fontSize: '8px', letterSpacing: '0.3em', opacity: 0.5, marginTop: '4px' }}>
               // AUTORIZAÇÃO NECESSÁRIA //
             </p>
 
-            {/* Botão terminal */}
             <button
               onClick={handleEnter}
               style={{
@@ -330,8 +383,8 @@ export default function LandingPage() {
                 fontFamily: 'inherit',
                 fontSize: 'clamp(12px, 3.5vw, 15px)',
                 letterSpacing: '0.45em',
-                color: '#00ff41',
-                textShadow: '0 0 8px #00ff41, 0 0 20px #00cc33',
+                color: GREEN,
+                textShadow: `0 0 8px ${GREEN}, 0 0 20px #00cc33`,
                 display: 'flex',
                 alignItems: 'center',
                 gap: '10px',
@@ -341,14 +394,13 @@ export default function LandingPage() {
             >
               <span style={{ opacity: 0.8 }}>&gt;</span>
               <span>ENTRAR</span>
-              {/* Cursor piscante */}
               <span
                 style={{
                   display: 'inline-block',
                   width: '10px',
                   height: '1.1em',
-                  background: '#00ff41',
-                  boxShadow: '0 0 8px #00ff41',
+                  background: GREEN,
+                  boxShadow: `0 0 8px ${GREEN}`,
                   animation: 'cursor-blink 1s step-end infinite',
                   verticalAlign: 'middle',
                 }}
@@ -358,52 +410,51 @@ export default function LandingPage() {
         </div>
       )}
 
-      {/* ── Tela de transmissão ── */}
-      {transmitting && <TransmittingScreen />}
-
-      {/* ── Overlay CRT ligando ── */}
-      {crtOn && (
-        <div
-          className="fixed inset-0 pointer-events-none overflow-hidden"
-          style={{ zIndex: 60 }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'linear-gradient(to bottom, rgba(0,18,6,1) 0%, rgba(0,160,50,0.93) 28%, rgba(170,255,195,0.97) 50%, rgba(0,160,50,0.93) 72%, rgba(0,18,6,1) 100%)',
-              transformOrigin: '50% 50%',
-              animation: 'crt-power-on 1.6s cubic-bezier(0.4, 0, 0.2, 1) forwards',
-            }}
-          />
+      {/* ── Transmissão com wrapper para animação crt-power-off ── */}
+      {!entered && (prePhase === 'transmitting' || prePhase === 'screen-off') && (
+        <div style={{
+          transformOrigin: '50% 50%',
+          ...(prePhase === 'screen-off'
+            ? { animation: 'crt-power-off 0.6s cubic-bezier(0.4, 0, 0.6, 1) forwards' }
+            : {}),
+        }}>
+          <TransmittingScreen />
         </div>
       )}
 
-      {/* Video section */}
-      <section className="w-full relative">
+      {/* ── Terminal: cursor piscando + digitação ── */}
+      {!entered && prePhase === 'terminal' && (
+        <TerminalScreen text={terminalText} />
+      )}
+
+      {/* ── Seção de vídeo ── */}
+      <section
+        className="w-full relative"
+        style={entered ? {
+          opacity: videoVisible ? 1 : 0,
+          transition: 'opacity 1.5s ease-in',
+        } : { display: 'none' }}
+      >
         <video
           ref={videoRef}
           src="/video/hero.mp4"
           playsInline
           preload="metadata"
           className="w-full block"
-          style={{ display: entered ? 'block' : 'none' }}
           onTimeUpdate={handleTimeUpdate}
           onEnded={handleVideoEnd}
         />
         {/* Gradiente de transição vídeo → preto */}
-        {entered && (
-          <div
-            className="absolute bottom-0 left-0 w-full pointer-events-none"
-            style={{
-              height: '35%',
-              background: 'linear-gradient(to bottom, transparent, #000)',
-            }}
-          />
-        )}
+        <div
+          className="absolute bottom-0 left-0 w-full pointer-events-none"
+          style={{
+            height: '35%',
+            background: 'linear-gradient(to bottom, transparent, #000)',
+          }}
+        />
       </section>
 
-      {/* Spacer + countdown (only after video ends) */}
+      {/* ── Spacer + countdown (somente após o vídeo terminar) ── */}
       {videoEnded && (
         <>
           <div className="h-[8vh] sm:h-[12vh]" />

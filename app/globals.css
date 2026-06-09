@@ -39,12 +39,11 @@
   50%, 100% { opacity: 0; }
 }
 
-/* Tela de transmissão: aparece, segura, dissolve */
+/* Tela de transmissão: aparece e segura (fade-out feito pelo crt-power-off) */
 @keyframes transmit-appear {
   0%   { opacity: 0; }
-  8%   { opacity: 1; }
-  78%  { opacity: 1; }
-  100% { opacity: 0; }
+  10%  { opacity: 1; }
+  100% { opacity: 1; }
 }
 
 /* Barra de progresso da transmissão */
@@ -52,6 +51,15 @@
   0%   { width: 0%; }
   90%  { width: 100%; }
   100% { width: 100%; }
+}
+
+/* Tela desligando: colapsa para linha horizontal e some */
+@keyframes crt-power-off {
+  0%   { transform: scaleY(1);     filter: brightness(1.1); opacity: 1; }
+  20%  { transform: scaleY(1);     filter: brightness(1.8); opacity: 1; }
+  60%  { transform: scaleY(0.004); filter: brightness(6);   opacity: 1; }
+  82%  { transform: scaleY(0.004); filter: brightness(6);   opacity: 1; }
+  100% { transform: scaleY(0.004); filter: brightness(6);   opacity: 0; }
 }
 
 html {
