@@ -223,7 +223,7 @@ export default function LandingPage() {
       {/* Spacer + countdown (only after video ends) */}
       {videoEnded && (
         <>
-          <div className="h-[30vh] sm:h-[50vh]" />
+          <div className="h-[8vh] sm:h-[12vh]" />
 
           <section
             ref={countdownRef}
