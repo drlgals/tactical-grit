@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 const LAUNCH_DATE = new Date('2026-08-31T00:00:00');
@@ -22,9 +23,12 @@ function pad(n: number) {
 function DogTag() {
   return (
     <div className="mt-10 sm:mt-16 flex flex-col items-center">
-      <img
-        src="/images/dogtag.png"
+      <Image
+        src="/images/dogtag.webp"
         alt="Dog tag Tactical Grit — O cronômetro está rodando. Em breve, a data que vai mudar o seu calendário."
+        width={840}
+        height={1188}
+        priority={false}
         style={{
           width: 'clamp(180px, 55vw, 420px)',
           height: 'auto',
