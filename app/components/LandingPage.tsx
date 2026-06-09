@@ -61,8 +61,9 @@ function DigitBlock({ value, label }: { value: string; label: string }) {
               8
             </div>
             <span
-              className="relative z-10 font-mono text-xl sm:text-5xl md:text-8xl font-bold leading-none tabular-nums"
+              className="relative z-10 text-xl sm:text-5xl md:text-8xl font-bold leading-none tabular-nums"
               style={{
+                fontFamily: 'var(--font-geist-mono), monospace',
                 color: '#ff2200',
                 textShadow: '0 0 6px #ff2200, 0 0 14px #ff4400, 0 0 28px rgba(255,34,0,0.5)',
               }}
@@ -73,8 +74,8 @@ function DigitBlock({ value, label }: { value: string; label: string }) {
         ))}
       </div>
       <span
-        className="text-[7px] sm:text-xs tracking-[0.15em] sm:tracking-[0.3em] uppercase font-mono"
-        style={{ color: '#ff2200', textShadow: '0 0 6px #ff2200' }}
+        className="text-[7px] sm:text-xs tracking-[0.15em] sm:tracking-[0.3em] uppercase"
+        style={{ fontFamily: 'var(--font-geist-mono), monospace', color: '#ff2200', textShadow: '0 0 6px #ff2200' }}
       >
         {label}
       </span>
@@ -129,14 +130,14 @@ export default function LandingPage() {
     // 1. Dispara animação CRT
     setCrtOn(true);
 
-    // 2. No pico da expansão (~700ms): troca para vídeo por baixo do overlay
+    // 2. No pico da expansão (~1050ms): troca para vídeo por baixo do overlay
     setTimeout(() => {
       setEntered(true);
       videoRef.current?.play().catch(() => {});
-    }, 700);
+    }, 1050);
 
-    // 3. Overlay some (~1100ms): usuário já vê o vídeo
-    setTimeout(() => setCrtOn(false), 1100);
+    // 3. Overlay dissolve suave (~1700ms): usuário já vê o vídeo
+    setTimeout(() => setCrtOn(false), 1700);
   };
 
   // Fade-out de áudio nos últimos 2s do vídeo
@@ -294,9 +295,9 @@ export default function LandingPage() {
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'linear-gradient(to bottom, #003d12 0%, #00cc33 35%, #c8ffc8 50%, #00cc33 65%, #003d12 100%)',
+              background: 'linear-gradient(to bottom, rgba(0,18,6,1) 0%, rgba(0,160,50,0.93) 28%, rgba(170,255,195,0.97) 50%, rgba(0,160,50,0.93) 72%, rgba(0,18,6,1) 100%)',
               transformOrigin: '50% 50%',
-              animation: 'crt-power-on 1.1s cubic-bezier(0.19, 1, 0.22, 1) forwards',
+              animation: 'crt-power-on 1.6s cubic-bezier(0.4, 0, 0.2, 1) forwards',
             }}
           />
         </div>
