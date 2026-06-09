@@ -1,77 +1,111 @@
 import sharp from 'sharp';
-import { readFileSync, writeFileSync } from 'fs';
 
 const INPUT  = 'public/images/dogtag.png';
 const OUTPUT = 'public/images/dogtag.png';
 
-const image  = sharp(INPUT);
-const { data, info } = await image.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+const { data, info } = await sharp(INPUT)
+  .ensureAlpha()
+  .raw()
+  .toBuffer({ resolveWithObject: true });
 
-const { width, height, channels } = info; // channels = 4 (RGBA)
-const pixels = new Uint8Array(data);
+const { width, height, channels } = info;
+const px = new Uint8Array(data);
 
-// --- BFS flood-fill from the four corners to mark white/near-white pixels as transparent ---
-const isWhitish = (i) => {
-  const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
-  // tolerance: pixels brighter than 220 em todos os canais
-  return r > 210 && g > 210 && b > 210;
-};
+const idx  = (x, y) => (y * width + x) * channels;
+const isWhitish = (i, tol) => px[i] > tol && px[i+1] > tol && px[i+2] > tol;
+const setTransparent = (i) => { px[i+3] = 0; };
 
-const visited  = new Uint8Array(width * height);
-const queue    = [];
+// ── Stage 1: BFS flood-fill from all four edges ──────────────────────────────
+// Tolerance 228: slightly above metal highlights (~210-220) but below pure white
+const TOL_BFS = 228;
+const visited = new Uint8Array(width * height);
+const queue   = [];
 
 const enqueue = (x, y) => {
   if (x < 0 || x >= width || y < 0 || y >= height) return;
-  const idx = y * width + x;
-  if (visited[idx]) return;
-  const pi = idx * channels;
-  if (!isWhitish(pi)) return;
-  visited[idx] = 1;
-  queue.push(idx);
+  const id = y * width + x;
+  if (visited[id]) return;
+  if (!isWhitish(idx(x, y), TOL_BFS)) return;
+  visited[id] = 1;
+  queue.push(id);
 };
 
-// Seed from all four edges
-for (let x = 0; x < width; x++)  { enqueue(x, 0); enqueue(x, height - 1); }
+for (let x = 0; x < width;  x++) { enqueue(x, 0); enqueue(x, height - 1); }
 for (let y = 0; y < height; y++) { enqueue(0, y); enqueue(width - 1, y); }
 
-// BFS
 while (queue.length) {
-  const idx = queue.pop();
-  const x   = idx % width;
-  const y   = (idx - x) / width;
-  const pi  = idx * channels;
-
-  // Make fully transparent
-  pixels[pi + 3] = 0;
-
-  enqueue(x - 1, y);
-  enqueue(x + 1, y);
-  enqueue(x,     y - 1);
-  enqueue(x,     y + 1);
+  const id = queue.pop();
+  const x  = id % width;
+  const y  = (id - x) / width;
+  setTransparent(idx(x, y));
+  enqueue(x-1, y); enqueue(x+1, y);
+  enqueue(x, y-1); enqueue(x, y+1);
 }
 
-// Soft-edge: for pixels on the border of the removed region, feather alpha
-for (let y = 1; y < height - 1; y++) {
-  for (let x = 1; x < width - 1; x++) {
-    const idx = y * width + x;
-    const pi  = idx * channels;
-    if (pixels[pi + 3] === 255 && isWhitish(pi)) {
-      // neighbour that was flood-filled? feather it
-      const neighbors = [
-        visited[(y-1)*width + x],
-        visited[(y+1)*width + x],
-        visited[y*width + (x-1)],
-        visited[y*width + (x+1)],
-      ];
-      if (neighbors.some(Boolean)) {
-        pixels[pi + 3] = 0;
-        visited[idx] = 1;
+// ── Stage 2: Global pass — remove enclosed white islands ─────────────────────
+// Any fully-white pixel (>240 all channels) still opaque is interior background.
+// Chain links create enclosed pockets unreachable from the border BFS.
+const TOL_GLOBAL = 240;
+for (let y = 0; y < height; y++) {
+  for (let x = 0; x < width; x++) {
+    const i = idx(x, y);
+    if (px[i+3] > 0 && isWhitish(i, TOL_GLOBAL)) {
+      setTransparent(i);
+    }
+  }
+}
+
+// ── Stage 3: Grow transparency 2 pixels outward to clean anti-aliased edges ──
+// For pixels adjacent to transparent area, blend alpha based on brightness.
+for (let pass = 0; pass < 2; pass++) {
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      const i = idx(x, y);
+      if (px[i+3] === 0) continue; // already transparent
+
+      // Check if any 8-neighbour is transparent
+      const hasTransparentNeighbour =
+        px[idx(x-1, y-1)+3] === 0 || px[idx(x, y-1)+3] === 0 || px[idx(x+1, y-1)+3] === 0 ||
+        px[idx(x-1, y  )+3] === 0 ||                             px[idx(x+1, y  )+3] === 0 ||
+        px[idx(x-1, y+1)+3] === 0 || px[idx(x, y+1)+3] === 0 || px[idx(x+1, y+1)+3] === 0;
+
+      if (!hasTransparentNeighbour) continue;
+
+      // Brightness 0-255
+      const brightness = (px[i] * 0.299 + px[i+1] * 0.587 + px[i+2] * 0.114);
+
+      // Pixels brighter than 200 on the border → fade alpha proportionally
+      if (brightness > 200) {
+        const fade = (brightness - 200) / 55; // 0 at 200, 1 at 255
+        px[i+3] = Math.round(px[i+3] * (1 - fade));
       }
     }
   }
 }
 
-await sharp(Buffer.from(pixels), { raw: { width, height, channels } })
+// ── Stage 4: Soft-matte — feather remaining near-white border pixels ─────────
+// One more targeted pass: border pixels that are still near-white get
+// partial alpha to avoid a hard jaggy edge.
+for (let y = 1; y < height - 1; y++) {
+  for (let x = 1; x < width - 1; x++) {
+    const i = idx(x, y);
+    if (px[i+3] === 0) continue;
+
+    const brightness = (px[i] * 0.299 + px[i+1] * 0.587 + px[i+2] * 0.114);
+    if (brightness > 215) {
+      const hasTransparentNeighbour =
+        px[idx(x-1, y-1)+3] === 0 || px[idx(x, y-1)+3] === 0 || px[idx(x+1, y-1)+3] === 0 ||
+        px[idx(x-1, y  )+3] === 0 ||                             px[idx(x+1, y  )+3] === 0 ||
+        px[idx(x-1, y+1)+3] === 0 || px[idx(x, y+1)+3] === 0 || px[idx(x+1, y+1)+3] === 0;
+      if (hasTransparentNeighbour) {
+        const fade = Math.min(1, (brightness - 215) / 40);
+        px[i+3] = Math.round(px[i+3] * (1 - fade * 0.85));
+      }
+    }
+  }
+}
+
+await sharp(Buffer.from(px), { raw: { width, height, channels } })
   .png({ compressionLevel: 9 })
   .toFile(OUTPUT);
 
