@@ -19,143 +19,22 @@ function pad(n: number) {
   return String(n).padStart(2, '0');
 }
 
-const TAG_PATH =
-  'M 22,3 L 138,3 Q 157,3 157,22 L 157,262 Q 157,279 138,279 L 93,279 A 13,13 0 0,0 67,279 L 22,279 Q 3,279 3,262 L 3,22 Q 3,3 22,3 Z';
-
 function DogTag() {
   return (
-    <div
-      className="mt-16 flex flex-col items-center"
-      style={{ filter: 'drop-shadow(0 16px 40px rgba(0,0,0,0.95)) drop-shadow(0 4px 10px rgba(0,0,0,0.7))' }}
-    >
-      <svg
-        viewBox="0 0 160 290"
-        style={{ width: 'clamp(150px, 18vw, 230px)', overflow: 'visible', transform: 'rotate(-4deg)' }}
-        aria-label="Dog tag Tactical Grit"
-      >
-        <defs>
-          {/* Brushed-metal horizontal gradient */}
-          <linearGradient id="metalBase" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%"   stopColor="#b0b0b0" />
-            <stop offset="10%"  stopColor="#d8d8d8" />
-            <stop offset="22%"  stopColor="#efefef" />
-            <stop offset="35%"  stopColor="#c4c4c4" />
-            <stop offset="48%"  stopColor="#f5f5f5" />
-            <stop offset="60%"  stopColor="#d0d0d0" />
-            <stop offset="72%"  stopColor="#eaeaea" />
-            <stop offset="85%"  stopColor="#c8c8c8" />
-            <stop offset="100%" stopColor="#b8b8b8" />
-          </linearGradient>
-
-          {/* Brushed-metal texture (horizontal streaks) */}
-          <filter id="brushed" x="0%" y="0%" width="100%" height="100%" colorInterpolationFilters="sRGB">
-            <feTurbulence type="fractalNoise" baseFrequency="0 0.022" numOctaves="4" seed="7" result="noise" />
-            <feColorMatrix type="saturate" values="0" in="noise" result="grayNoise" />
-            <feBlend in="SourceGraphic" in2="grayNoise" mode="overlay" result="blended" />
-            <feComposite in="blended" in2="SourceGraphic" operator="in" />
-          </filter>
-
-          {/* Engraving: dark top edge + light bottom edge per glyph */}
-          <filter id="engrave" x="-5%" y="-30%" width="110%" height="160%" colorInterpolationFilters="sRGB">
-            <feGaussianBlur in="SourceAlpha" stdDeviation="0.55" result="blur" />
-            {/* dark shadow at top of each stroke */}
-            <feOffset in="blur" dx="0" dy="-1" result="topBlur" />
-            <feFlood floodColor="#000000" floodOpacity="0.75" result="black" />
-            <feComposite in="black" in2="topBlur" operator="in" result="darkEdge" />
-            {/* light highlight at bottom of each stroke */}
-            <feOffset in="blur" dx="0" dy="1.2" result="bottomBlur" />
-            <feFlood floodColor="#ffffff" floodOpacity="0.55" result="white" />
-            <feComposite in="white" in2="bottomBlur" operator="in" result="lightEdge" />
-            <feMerge>
-              <feMergeNode in="darkEdge" />
-              <feMergeNode in="lightEdge" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-
-          {/* Chain-hole inner gradient */}
-          <radialGradient id="holeGrad" cx="38%" cy="32%" r="62%">
-            <stop offset="0%"   stopColor="#888" />
-            <stop offset="35%"  stopColor="#3a3a3a" />
-            <stop offset="100%" stopColor="#080808" />
-          </radialGradient>
-
-          {/* Chain-hole rim gradient */}
-          <linearGradient id="rimGrad" x1="20%" y1="0%" x2="80%" y2="100%">
-            <stop offset="0%"   stopColor="#f0f0f0" />
-            <stop offset="45%"  stopColor="#909090" />
-            <stop offset="100%" stopColor="#e0e0e0" />
-          </linearGradient>
-
-          {/* Clip path for body */}
-          <clipPath id="tagClip">
-            <path d={TAG_PATH} />
-          </clipPath>
-        </defs>
-
-        {/* ── Body ── */}
-        {/* Base metal fill + brushed texture */}
-        <path d={TAG_PATH} fill="url(#metalBase)" filter="url(#brushed)" />
-
-        {/* Top-left bevel highlight */}
-        <path
-          d={TAG_PATH}
-          fill="none"
-          stroke="rgba(255,255,255,0.45)"
-          strokeWidth="1.8"
-          clipPath="url(#tagClip)"
-        />
-
-        {/* Bottom-right shadow edge */}
-        <path
-          d={TAG_PATH}
-          fill="none"
-          stroke="rgba(0,0,0,0.35)"
-          strokeWidth="1"
-        />
-
-        {/* ── Chain hole ── */}
-        {/* Rim */}
-        <circle cx="80" cy="30" r="14" fill="url(#rimGrad)" />
-        {/* Inner dark tunnel */}
-        <circle cx="80" cy="30" r="10" fill="url(#holeGrad)" />
-        {/* Rim top-highlight */}
-        <circle cx="80" cy="30" r="14" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.8" />
-        {/* Rim bottom-shadow */}
-        <circle cx="80" cy="30" r="14" fill="none" stroke="rgba(0,0,0,0.4)" strokeWidth="0.5" />
-
-        {/* ── Engraved text ── */}
-        <g
-          filter="url(#engrave)"
-          fill="#626262"
-          fontFamily="'Courier New', Courier, monospace"
-          textAnchor="middle"
-        >
-          {/* Brand */}
-          <text x="80" y="70" fontSize="10.5" fontWeight="700" letterSpacing="3.5" fill="#505050">
-            TACTICAL GRIT
-          </text>
-
-          {/* Separator */}
-          <text x="80" y="84" fontSize="5.5" letterSpacing="0.8" fill="#7a7a7a">
-            ─────────────────
-          </text>
-
-          {/* Main phrase */}
-          <text x="80" y="105" fontSize="9" letterSpacing="2.2">O CRONÔMETRO</text>
-          <text x="80" y="121" fontSize="9" letterSpacing="2.2">ESTÁ RODANDO.</text>
-
-          {/* Separator */}
-          <text x="80" y="138" fontSize="5.5" letterSpacing="0.8" fill="#7a7a7a">
-            ─────────────────
-          </text>
-
-          {/* Secondary phrase */}
-          <text x="80" y="158" fontSize="7.8" letterSpacing="1.8">EM BREVE, A DATA</text>
-          <text x="80" y="173" fontSize="7.8" letterSpacing="1.8">QUE VAI MUDAR</text>
-          <text x="80" y="188" fontSize="7.8" letterSpacing="1.8">O SEU CALENDÁRIO.</text>
-        </g>
-      </svg>
+    <div className="mt-16 flex flex-col items-center">
+      <img
+        src="/images/dogtag.png"
+        alt="Dog tag Tactical Grit — O cronômetro está rodando. Em breve, a data que vai mudar o seu calendário."
+        style={{
+          width: 'clamp(220px, 28vw, 420px)',
+          height: 'auto',
+          transform: 'rotate(-4deg)',
+          filter: 'drop-shadow(0 20px 50px rgba(0,0,0,1)) drop-shadow(0 6px 16px rgba(0,0,0,0.8))',
+          userSelect: 'none',
+          pointerEvents: 'none',
+        }}
+        draggable={false}
+      />
     </div>
   );
 }
