@@ -96,6 +96,7 @@ function Separator() {
 
 export default function LandingPage() {
   const [entered, setEntered] = useState(false);
+  const [crtOn, setCrtOn] = useState(false);
   const [videoEnded, setVideoEnded] = useState(false);
   const [countdownVisible, setCountdownVisible] = useState(false);
   const [timeLeft, setTimeLeft] = useState(getTimeLeft());
@@ -122,12 +123,20 @@ export default function LandingPage() {
 
   const handleEnter = async () => {
     const ctx = new AudioContext();
-    // iOS exige resume() explícito dentro do gesto do usuário
     if (ctx.state === 'suspended') await ctx.resume();
     audioCtxRef.current = ctx;
-    setEntered(true);
-    // play() direto — sem setTimeout para preservar o contexto de gesto no iOS
-    videoRef.current?.play().catch(() => {});
+
+    // 1. Dispara animação CRT
+    setCrtOn(true);
+
+    // 2. No pico da expansão (~700ms): troca para vídeo por baixo do overlay
+    setTimeout(() => {
+      setEntered(true);
+      videoRef.current?.play().catch(() => {});
+    }, 700);
+
+    // 3. Overlay some (~1100ms): usuário já vê o vídeo
+    setTimeout(() => setCrtOn(false), 1100);
   };
 
   // Fade-out de áudio nos últimos 2s do vídeo
@@ -178,26 +187,118 @@ export default function LandingPage() {
 
   return (
     <div className="bg-black min-h-screen">
-      {/* Entry screen */}
+      {/* ── Tela de entrada: estética fósforo / CRT ── */}
       {!entered && (
-        <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center gap-10">
-          <p
-            className="text-sm tracking-[0.5em] uppercase font-mono"
-            style={{ color: '#ff2200', textShadow: '0 0 8px #ff2200' }}
-          >
-            Tactical Grit
-          </p>
-          <button
-            onClick={handleEnter}
-            className="border border-red-700 px-12 py-5 text-sm tracking-[0.4em] uppercase font-mono text-red-500 hover:bg-red-900/20 active:bg-red-900/30 transition-colors duration-300 min-w-[200px]"
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden select-none"
+          style={{ background: '#000a02', animation: 'phosphor-flicker 9s infinite' }}
+        >
+          {/* Scanlines */}
+          <div
+            className="absolute inset-0 pointer-events-none"
             style={{
-              textShadow: '0 0 6px #ff2200',
-              boxShadow: '0 0 12px rgba(220,38,38,0.3)',
-              touchAction: 'manipulation',
+              background: 'repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(0,0,0,0.22) 3px, rgba(0,0,0,0.22) 4px)',
+              zIndex: 1,
             }}
+          />
+          {/* Vignette */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'radial-gradient(ellipse 80% 70% at 50% 50%, transparent 30%, rgba(0,0,0,0.92) 100%)',
+              zIndex: 2,
+            }}
+          />
+
+          {/* Conteúdo */}
+          <div
+            className="relative flex flex-col items-center gap-6 px-8"
+            style={{ zIndex: 10, fontFamily: 'var(--font-geist-mono), monospace' }}
           >
-            Entrar
-          </button>
+            {/* Linha decorativa */}
+            <p style={{ color: '#00843a', textShadow: '0 0 6px #00ff41', fontSize: '10px', letterSpacing: '0.35em', opacity: 0.65 }}>
+              ══════════════════════════
+            </p>
+
+            <p style={{ color: '#00843a', textShadow: '0 0 8px #00ff41', fontSize: '9px', letterSpacing: '0.45em', opacity: 0.7 }}>
+              SISTEMA TÁTICO OPERACIONAL
+            </p>
+
+            {/* Título principal */}
+            <p
+              style={{
+                color: '#00ff41',
+                textShadow: '0 0 6px #00ff41, 0 0 18px #00cc33, 0 0 38px #007a1f',
+                fontSize: 'clamp(16px, 5vw, 22px)',
+                letterSpacing: '0.65em',
+                fontWeight: 700,
+              }}
+            >
+              TACTICAL&nbsp;GRIT
+            </p>
+
+            <p style={{ color: '#00843a', textShadow: '0 0 6px #00ff41', fontSize: '10px', letterSpacing: '0.35em', opacity: 0.65 }}>
+              ══════════════════════════
+            </p>
+
+            <p style={{ color: '#00843a', fontSize: '8px', letterSpacing: '0.3em', opacity: 0.5, marginTop: '4px' }}>
+              // AUTORIZAÇÃO NECESSÁRIA //
+            </p>
+
+            {/* Botão terminal */}
+            <button
+              onClick={handleEnter}
+              style={{
+                marginTop: '24px',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 'clamp(12px, 3.5vw, 15px)',
+                letterSpacing: '0.45em',
+                color: '#00ff41',
+                textShadow: '0 0 8px #00ff41, 0 0 20px #00cc33',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '22px 44px',
+                touchAction: 'manipulation',
+              }}
+            >
+              <span style={{ opacity: 0.8 }}>&gt;</span>
+              <span>ENTRAR</span>
+              {/* Cursor piscante */}
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: '10px',
+                  height: '1.1em',
+                  background: '#00ff41',
+                  boxShadow: '0 0 8px #00ff41',
+                  animation: 'cursor-blink 1s step-end infinite',
+                  verticalAlign: 'middle',
+                }}
+              />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Overlay CRT ligando ── */}
+      {crtOn && (
+        <div
+          className="fixed inset-0 pointer-events-none overflow-hidden"
+          style={{ zIndex: 60 }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(to bottom, #003d12 0%, #00cc33 35%, #c8ffc8 50%, #00cc33 65%, #003d12 100%)',
+              transformOrigin: '50% 50%',
+              animation: 'crt-power-on 1.1s cubic-bezier(0.19, 1, 0.22, 1) forwards',
+            }}
+          />
         </div>
       )}
 
