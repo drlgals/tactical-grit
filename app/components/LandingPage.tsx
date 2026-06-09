@@ -32,6 +32,8 @@ function DogTag() {
           filter: 'drop-shadow(0 20px 50px rgba(0,0,0,1)) drop-shadow(0 6px 16px rgba(0,0,0,0.8))',
           userSelect: 'none',
           pointerEvents: 'none',
+          maskImage: 'radial-gradient(ellipse 78% 82% at 42% 48%, black 45%, transparent 100%)',
+          WebkitMaskImage: 'radial-gradient(ellipse 78% 82% at 42% 48%, black 45%, transparent 100%)',
         }}
         draggable={false}
       />
