@@ -21,12 +21,12 @@ function pad(n: number) {
 
 function DogTag() {
   return (
-    <div className="mt-16 flex flex-col items-center">
+    <div className="mt-10 sm:mt-16 flex flex-col items-center">
       <img
         src="/images/dogtag.png"
         alt="Dog tag Tactical Grit — O cronômetro está rodando. Em breve, a data que vai mudar o seu calendário."
         style={{
-          width: 'clamp(220px, 28vw, 420px)',
+          width: 'clamp(180px, 55vw, 420px)',
           height: 'auto',
           transform: 'rotate(-4deg)',
           filter: 'drop-shadow(0 20px 50px rgba(0,0,0,1)) drop-shadow(0 6px 16px rgba(0,0,0,0.8))',
@@ -43,23 +43,23 @@ function DogTag() {
 
 function DigitBlock({ value, label }: { value: string; label: string }) {
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="flex gap-1">
+    <div className="flex flex-col items-center gap-1 sm:gap-2">
+      <div className="flex gap-px sm:gap-1">
         {value.split('').map((d, i) => (
           <div
             key={i}
-            className="relative w-16 h-24 sm:w-20 sm:h-32 md:w-28 md:h-40 bg-black border border-red-900 rounded flex items-center justify-center overflow-hidden"
-            style={{ boxShadow: '0 0 12px rgba(220,38,38,0.4), inset 0 0 20px rgba(0,0,0,0.8)' }}
+            className="relative w-7 h-11 sm:w-16 sm:h-24 md:w-28 md:h-40 bg-black border border-red-900 rounded flex items-center justify-center overflow-hidden"
+            style={{ boxShadow: '0 0 8px rgba(220,38,38,0.4), inset 0 0 12px rgba(0,0,0,0.8)' }}
           >
             {/* inactive segments overlay */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-10 select-none pointer-events-none text-red-900 font-mono text-5xl sm:text-6xl md:text-8xl font-bold">
+            <div className="absolute inset-0 flex items-center justify-center opacity-10 select-none pointer-events-none text-red-900 font-mono text-xl sm:text-5xl md:text-8xl font-bold">
               8
             </div>
             <span
-              className="relative z-10 font-mono text-5xl sm:text-6xl md:text-8xl font-bold leading-none tabular-nums"
+              className="relative z-10 font-mono text-xl sm:text-5xl md:text-8xl font-bold leading-none tabular-nums"
               style={{
                 color: '#ff2200',
-                textShadow: '0 0 8px #ff2200, 0 0 20px #ff4400, 0 0 40px rgba(255,34,0,0.5)',
+                textShadow: '0 0 6px #ff2200, 0 0 14px #ff4400, 0 0 28px rgba(255,34,0,0.5)',
               }}
             >
               {d}
@@ -68,7 +68,7 @@ function DigitBlock({ value, label }: { value: string; label: string }) {
         ))}
       </div>
       <span
-        className="text-xs sm:text-sm tracking-[0.3em] uppercase font-mono"
+        className="text-[7px] sm:text-xs tracking-[0.15em] sm:tracking-[0.3em] uppercase font-mono"
         style={{ color: '#ff2200', textShadow: '0 0 6px #ff2200' }}
       >
         {label}
@@ -80,7 +80,7 @@ function DigitBlock({ value, label }: { value: string; label: string }) {
 function Separator() {
   return (
     <div
-      className="flex flex-col justify-center gap-3 pb-6 text-4xl sm:text-5xl md:text-6xl font-mono font-bold leading-none"
+      className="flex flex-col justify-center gap-1 sm:gap-3 pb-3 sm:pb-6 text-xl sm:text-4xl md:text-6xl font-mono font-bold leading-none"
       style={{ color: '#ff2200', textShadow: '0 0 8px #ff2200' }}
     >
       <span>:</span>
@@ -115,12 +115,14 @@ export default function LandingPage() {
     osc.stop(ctx.currentTime + 0.04);
   }, []);
 
-  const handleEnter = () => {
-    audioCtxRef.current = new AudioContext();
+  const handleEnter = async () => {
+    const ctx = new AudioContext();
+    // iOS exige resume() explícito dentro do gesto do usuário
+    if (ctx.state === 'suspended') await ctx.resume();
+    audioCtxRef.current = ctx;
     setEntered(true);
-    setTimeout(() => {
-      videoRef.current?.play();
-    }, 100);
+    // play() direto — sem setTimeout para preservar o contexto de gesto no iOS
+    videoRef.current?.play().catch(() => {});
   };
 
   // Fade-out de áudio nos últimos 2s do vídeo
@@ -182,8 +184,12 @@ export default function LandingPage() {
           </p>
           <button
             onClick={handleEnter}
-            className="border border-red-700 px-12 py-4 text-sm tracking-[0.4em] uppercase font-mono text-red-500 hover:bg-red-900/20 transition-colors duration-300"
-            style={{ textShadow: '0 0 6px #ff2200', boxShadow: '0 0 12px rgba(220,38,38,0.3)' }}
+            className="border border-red-700 px-12 py-5 text-sm tracking-[0.4em] uppercase font-mono text-red-500 hover:bg-red-900/20 active:bg-red-900/30 transition-colors duration-300 min-w-[200px]"
+            style={{
+              textShadow: '0 0 6px #ff2200',
+              boxShadow: '0 0 12px rgba(220,38,38,0.3)',
+              touchAction: 'manipulation',
+            }}
           >
             Entrar
           </button>
@@ -196,6 +202,7 @@ export default function LandingPage() {
           ref={videoRef}
           src="/video/hero.mp4"
           playsInline
+          preload="metadata"
           className="w-full block"
           style={{ display: entered ? 'block' : 'none' }}
           onTimeUpdate={handleTimeUpdate}
@@ -216,7 +223,7 @@ export default function LandingPage() {
       {/* Spacer + countdown (only after video ends) */}
       {videoEnded && (
         <>
-          <div className="h-[50vh]" />
+          <div className="h-[30vh] sm:h-[50vh]" />
 
           <section
             ref={countdownRef}
@@ -226,7 +233,7 @@ export default function LandingPage() {
               transform: countdownVisible ? 'translateY(0)' : 'translateY(40px)',
             }}
           >
-            <div className="flex items-end gap-2 sm:gap-3 md:gap-4">
+            <div className="flex items-end gap-1 sm:gap-2 md:gap-4">
               <DigitBlock value={pad(timeLeft.days)} label="Dias" />
               <Separator />
               <DigitBlock value={pad(timeLeft.hours)} label="Horas" />
