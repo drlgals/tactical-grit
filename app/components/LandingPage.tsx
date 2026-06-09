@@ -457,11 +457,13 @@ export default function LandingPage() {
       {/* ── Spacer + countdown (somente após o vídeo terminar) ── */}
       {videoEnded && (
         <>
-          <div className="h-[8vh] sm:h-[12vh]" />
+          {/* Espaço reduzido entre vídeo e contador */}
+          <div className="h-[3vh] sm:h-[5vh]" />
 
+          {/* Contador */}
           <section
             ref={countdownRef}
-            className="flex flex-col items-center justify-center py-24 px-4 transition-all duration-1000"
+            className="flex flex-col items-center justify-center py-12 sm:py-16 px-4 transition-all duration-1000"
             style={{
               opacity: countdownVisible ? 1 : 0,
               transform: countdownVisible ? 'translateY(0)' : 'translateY(40px)',
@@ -476,11 +478,47 @@ export default function LandingPage() {
               <Separator />
               <DigitBlock value={pad(timeLeft.seconds)} label="Segundos" />
             </div>
-
-            <DogTag />
           </section>
 
-          <div className="h-[30vh]" />
+          {/* Seção inferior: imagem de fundo com dogtag sobrepondo */}
+          <div className="relative w-full" style={{ marginTop: '-60px' }}>
+            {/* Dogtag flutuando sobre a imagem */}
+            <div className="relative z-10 flex justify-center" style={{ marginBottom: '-80px' }}>
+              <DogTag />
+            </div>
+
+            {/* Imagem de fundo com máscara de transparência */}
+            <div
+              className="relative w-full overflow-hidden"
+              style={{ height: 'clamp(280px, 55vw, 520px)' }}
+            >
+              <Image
+                src="/images/bg-grit.webp"
+                alt=""
+                fill
+                sizes="100vw"
+                priority={false}
+                style={{
+                  objectFit: 'cover',
+                  objectPosition: 'center 45%',
+                  filter: 'brightness(0.32) saturate(0.3) sepia(0.25) blur(1.5px)',
+                  maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 15%, black 35%, black 72%, transparent 100%)',
+                  WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 15%, black 35%, black 72%, transparent 100%)',
+                }}
+              />
+              {/* Overlay verde fósforo para harmonizar com a estética */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: 'radial-gradient(ellipse 100% 100% at 50% 60%, rgba(0,20,8,0.0) 0%, rgba(0,10,2,0.5) 100%)',
+                  maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.6) 18%, black 40%, black 70%, transparent 100%)',
+                  WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.6) 18%, black 40%, black 70%, transparent 100%)',
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="h-[15vh]" />
         </>
       )}
     </div>
