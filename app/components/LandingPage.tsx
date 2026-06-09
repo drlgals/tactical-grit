@@ -121,7 +121,19 @@ export default function LandingPage() {
     }, 100);
   };
 
+  // Fade-out de áudio nos últimos 2s do vídeo
+  const handleTimeUpdate = () => {
+    const video = videoRef.current;
+    if (!video || !video.duration) return;
+    const remaining = video.duration - video.currentTime;
+    const FADE_DURATION = 2; // segundos
+    if (remaining <= FADE_DURATION) {
+      video.volume = Math.max(0, remaining / FADE_DURATION);
+    }
+  };
+
   const handleVideoEnd = () => {
+    if (videoRef.current) videoRef.current.volume = 0;
     setVideoEnded(true);
     tickIntervalRef.current = setInterval(playTick, 1000);
   };
@@ -177,15 +189,26 @@ export default function LandingPage() {
       )}
 
       {/* Video section */}
-      <section className="w-full">
+      <section className="w-full relative">
         <video
           ref={videoRef}
           src="/video/hero.mp4"
           playsInline
           className="w-full block"
           style={{ display: entered ? 'block' : 'none' }}
+          onTimeUpdate={handleTimeUpdate}
           onEnded={handleVideoEnd}
         />
+        {/* Gradiente de transição vídeo → preto */}
+        {entered && (
+          <div
+            className="absolute bottom-0 left-0 w-full pointer-events-none"
+            style={{
+              height: '35%',
+              background: 'linear-gradient(to bottom, transparent, #000)',
+            }}
+          />
+        )}
       </section>
 
       {/* Spacer + countdown (only after video ends) */}
