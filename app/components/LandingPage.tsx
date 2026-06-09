@@ -481,16 +481,17 @@ export default function LandingPage() {
           </section>
 
           {/* Seção inferior: imagem de fundo com dogtag sobrepondo */}
-          <div className="relative w-full" style={{ marginTop: '-120px' }}>
+          {/* marginTop: 0 no mobile, sobe progressivamente no desktop */}
+          <div className="relative w-full mt-0 sm:-mt-16 md:-mt-28">
             {/* Dogtag flutuando completamente sobre a imagem */}
-            <div className="relative z-10 flex justify-center" style={{ marginBottom: '-160px' }}>
+            <div className="relative z-10 flex justify-center -mb-16 sm:-mb-28 md:-mb-40">
               <DogTag />
             </div>
 
             {/* Imagem de fundo com máscara de transparência */}
             <div
               className="relative w-full overflow-hidden"
-              style={{ height: 'clamp(340px, 65vw, 620px)' }}
+              style={{ height: 'clamp(300px, 60vw, 620px)' }}
             >
               <Image
                 src="/images/bg-grit.webp"
@@ -518,7 +519,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="h-[4vh]" />
+          <div className="h-[2vh] sm:h-[4vh]" />
         </>
       )}
     </div>
