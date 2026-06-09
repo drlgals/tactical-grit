@@ -19,6 +19,89 @@ function pad(n: number) {
   return String(n).padStart(2, '0');
 }
 
+function DogTag() {
+  return (
+    <div className="mt-16 flex flex-col items-center">
+      {/* Chain hole */}
+      <div
+        className="w-4 h-4 rounded-full mb-0"
+        style={{
+          background: 'radial-gradient(circle at 40% 35%, #e0e0e0, #888 60%, #555)',
+          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.8), 0 1px 1px rgba(255,255,255,0.15)',
+        }}
+      />
+
+      {/* Dog tag body */}
+      <div
+        className="relative px-8 pt-6 pb-8 flex flex-col items-center gap-3"
+        style={{
+          width: 'clamp(260px, 36vw, 400px)',
+          background: `
+            linear-gradient(
+              160deg,
+              #d8d8d8 0%,
+              #f2f2f2 18%,
+              #c8c8c8 35%,
+              #e5e5e5 52%,
+              #b8b8b8 68%,
+              #d5d5d5 82%,
+              #c0c0c0 100%
+            )`,
+          borderRadius: '50% / 12%',
+          boxShadow: `
+            0 4px 16px rgba(0,0,0,0.7),
+            0 1px 2px rgba(255,255,255,0.25) inset,
+            0 -1px 2px rgba(0,0,0,0.4) inset
+          `,
+          /* notch at bottom via clip-path */
+          clipPath: 'polygon(0% 0%, 100% 0%, 100% 90%, 56% 90%, 50% 100%, 44% 90%, 0% 90%)',
+        }}
+      >
+        {/* Engraved lines */}
+        <EngravedLine text="TACTICAL GRIT" size="xs" spacing="0.45em" bold />
+        <EngravedLine text="━━━━━━━━━━━━━━━━━━━━" size="xs" spacing="0.1em" />
+        <EngravedLine text="O CRONÔMETRO ESTÁ" size="sm" spacing="0.25em" />
+        <EngravedLine text="RODANDO." size="sm" spacing="0.25em" />
+        <EngravedLine text="━━━━━━━━━━━━━━━━━━━━" size="xs" spacing="0.1em" />
+        <EngravedLine text="EM BREVE, A DATA QUE" size="xs" spacing="0.2em" />
+        <EngravedLine text="VAI MUDAR O SEU" size="xs" spacing="0.2em" />
+        <EngravedLine text="CALENDÁRIO." size="xs" spacing="0.2em" />
+      </div>
+    </div>
+  );
+}
+
+function EngravedLine({
+  text,
+  size = 'sm',
+  spacing = '0.2em',
+  bold = false,
+}: {
+  text: string;
+  size?: 'xs' | 'sm' | 'base';
+  spacing?: string;
+  bold?: boolean;
+}) {
+  const sizeClass = size === 'xs' ? 'text-xs' : size === 'sm' ? 'text-sm' : 'text-base';
+  return (
+    <p
+      className={`${sizeClass} font-mono text-center w-full select-none`}
+      style={{
+        letterSpacing: spacing,
+        fontWeight: bold ? 700 : 500,
+        color: '#5a5a5a',
+        textShadow: `
+          0px 1px 1px rgba(255,255,255,0.55),
+          0px -1px 1px rgba(0,0,0,0.55)
+        `,
+        lineHeight: 1.6,
+      }}
+    >
+      {text}
+    </p>
+  );
+}
+
 function DigitBlock({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex flex-col items-center gap-2">
@@ -191,12 +274,7 @@ export default function LandingPage() {
               <DigitBlock value={pad(timeLeft.seconds)} label="Segundos" />
             </div>
 
-            <p
-              className="mt-16 text-center font-mono text-sm sm:text-base tracking-widest max-w-xl leading-relaxed"
-              style={{ color: '#888', letterSpacing: '0.1em' }}
-            >
-              O cronômetro está rodando. Em breve, a data que vai mudar o seu calendário.
-            </p>
+            <DogTag />
           </section>
 
           <div className="h-[30vh]" />
