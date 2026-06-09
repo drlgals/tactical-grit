@@ -39,6 +39,21 @@
   50%, 100% { opacity: 0; }
 }
 
+/* Tela de transmissão: aparece, segura, dissolve */
+@keyframes transmit-appear {
+  0%   { opacity: 0; }
+  8%   { opacity: 1; }
+  78%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Barra de progresso da transmissão */
+@keyframes transmit-bar {
+  0%   { width: 0%; }
+  90%  { width: 100%; }
+  100% { width: 100%; }
+}
+
 html {
   overflow-x: hidden;
 }

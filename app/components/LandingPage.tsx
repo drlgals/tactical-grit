@@ -20,6 +20,74 @@ function pad(n: number) {
   return String(n).padStart(2, '0');
 }
 
+const MONO = 'var(--font-geist-mono), monospace';
+const GREEN = '#00ff41';
+const GREEN_DIM = '#00843a';
+const GLOW = `0 0 6px ${GREEN}, 0 0 18px #00cc33, 0 0 36px #007a1f`;
+
+function TransmittingScreen() {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
+      style={{ background: '#000a02', animation: 'transmit-appear 2s ease-in-out forwards' }}
+    >
+      {/* Scanlines */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        background: 'repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(0,0,0,0.22) 3px, rgba(0,0,0,0.22) 4px)',
+      }} />
+      {/* Vignette */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        background: 'radial-gradient(ellipse 80% 70% at 50% 50%, transparent 30%, rgba(0,0,0,0.92) 100%)',
+      }} />
+
+      <div className="relative flex flex-col items-center gap-4 px-8 text-center" style={{ fontFamily: MONO }}>
+        <p style={{ color: GREEN_DIM, textShadow: `0 0 6px ${GREEN}`, fontSize: '10px', letterSpacing: '0.35em', opacity: 0.65 }}>
+          ══════════════════════════
+        </p>
+
+        <p style={{ color: GREEN, textShadow: GLOW, fontSize: 'clamp(13px, 4vw, 17px)', letterSpacing: '0.5em', fontWeight: 700 }}>
+          INICIANDO TRANSMISSÃO
+        </p>
+
+        <p style={{ color: GREEN_DIM, textShadow: `0 0 6px ${GREEN}`, fontSize: '10px', letterSpacing: '0.35em', opacity: 0.65 }}>
+          ══════════════════════════
+        </p>
+
+        <div className="flex flex-col gap-2 mt-2" style={{ fontSize: '10px', letterSpacing: '0.3em', color: GREEN_DIM }}>
+          <p>CANAL <span style={{ marginLeft: '0.5em' }}>..........:</span> <span style={{ color: GREEN }}>SEGURO</span></p>
+          <p>PROTOCOLO <span style={{ marginLeft: '0.5em' }}>......:</span> <span style={{ color: GREEN }}>ATIVO</span></p>
+          <p>STATUS <span style={{ marginLeft: '0.5em' }}>........:</span> <span style={{ color: GREEN }}>CONECTADO</span></p>
+        </div>
+
+        {/* Barra de progresso */}
+        <div className="mt-4 w-48 sm:w-64" style={{
+          height: '2px',
+          background: 'rgba(0,255,65,0.15)',
+          overflow: 'hidden',
+          boxShadow: `0 0 6px ${GREEN}`,
+        }}>
+          <div style={{
+            height: '100%',
+            background: GREEN,
+            boxShadow: `0 0 8px ${GREEN}`,
+            animation: 'transmit-bar 1.8s linear forwards',
+          }} />
+        </div>
+
+        <p className="mt-2" style={{ color: GREEN, textShadow: GLOW, fontSize: '11px', letterSpacing: '0.4em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          AGUARDE
+          <span style={{
+            display: 'inline-block', width: '9px', height: '1em',
+            background: GREEN, boxShadow: `0 0 6px ${GREEN}`,
+            animation: 'cursor-blink 0.8s step-end infinite',
+            verticalAlign: 'middle',
+          }} />
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function DogTag() {
   return (
     <div className="mt-10 sm:mt-16 flex flex-col items-center">
@@ -53,19 +121,19 @@ function DigitBlock({ value, label }: { value: string; label: string }) {
         {value.split('').map((d, i) => (
           <div
             key={i}
-            className="relative w-7 h-11 sm:w-16 sm:h-24 md:w-28 md:h-40 bg-black border border-red-900 rounded flex items-center justify-center overflow-hidden"
-            style={{ boxShadow: '0 0 8px rgba(220,38,38,0.4), inset 0 0 12px rgba(0,0,0,0.8)' }}
+            className="relative w-7 h-11 sm:w-16 sm:h-24 md:w-28 md:h-40 bg-black border border-green-900 rounded flex items-center justify-center overflow-hidden"
+            style={{ boxShadow: '0 0 8px rgba(0,255,65,0.3), inset 0 0 12px rgba(0,0,0,0.8)' }}
           >
             {/* inactive segments overlay */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-10 select-none pointer-events-none text-red-900 font-mono text-xl sm:text-5xl md:text-8xl font-bold">
+            <div className="absolute inset-0 flex items-center justify-center opacity-10 select-none pointer-events-none text-green-900 font-mono text-xl sm:text-5xl md:text-8xl font-bold">
               8
             </div>
             <span
               className="relative z-10 text-xl sm:text-5xl md:text-8xl font-bold leading-none tabular-nums"
               style={{
-                fontFamily: 'var(--font-geist-mono), monospace',
-                color: '#ff2200',
-                textShadow: '0 0 6px #ff2200, 0 0 14px #ff4400, 0 0 28px rgba(255,34,0,0.5)',
+                fontFamily: MONO,
+                color: GREEN,
+                textShadow: `0 0 6px ${GREEN}, 0 0 14px #00cc33, 0 0 28px rgba(0,255,65,0.5)`,
               }}
             >
               {d}
@@ -75,7 +143,7 @@ function DigitBlock({ value, label }: { value: string; label: string }) {
       </div>
       <span
         className="text-[7px] sm:text-xs tracking-[0.15em] sm:tracking-[0.3em] uppercase"
-        style={{ fontFamily: 'var(--font-geist-mono), monospace', color: '#ff2200', textShadow: '0 0 6px #ff2200' }}
+        style={{ fontFamily: MONO, color: GREEN, textShadow: `0 0 6px ${GREEN}` }}
       >
         {label}
       </span>
@@ -86,8 +154,8 @@ function DigitBlock({ value, label }: { value: string; label: string }) {
 function Separator() {
   return (
     <div
-      className="flex flex-col justify-center gap-1 sm:gap-3 pb-3 sm:pb-6 text-xl sm:text-4xl md:text-6xl font-mono font-bold leading-none"
-      style={{ color: '#ff2200', textShadow: '0 0 8px #ff2200' }}
+      className="flex flex-col justify-center gap-1 sm:gap-3 pb-3 sm:pb-6 text-xl sm:text-4xl md:text-6xl font-bold leading-none"
+      style={{ fontFamily: MONO, color: GREEN, textShadow: `0 0 8px ${GREEN}` }}
     >
       <span>:</span>
       <span>:</span>
@@ -98,6 +166,7 @@ function Separator() {
 export default function LandingPage() {
   const [entered, setEntered] = useState(false);
   const [crtOn, setCrtOn] = useState(false);
+  const [transmitting, setTransmitting] = useState(false);
   const [videoEnded, setVideoEnded] = useState(false);
   const [countdownVisible, setCountdownVisible] = useState(false);
   const [timeLeft, setTimeLeft] = useState(getTimeLeft());
@@ -130,14 +199,18 @@ export default function LandingPage() {
     // 1. Dispara animação CRT
     setCrtOn(true);
 
-    // 2. No pico da expansão (~1050ms): troca para vídeo por baixo do overlay
+    // 2. CRT some → tela de transmissão aparece
     setTimeout(() => {
+      setCrtOn(false);
+      setTransmitting(true);
+    }, 1700);
+
+    // 3. Transmissão encerra → vídeo começa (~3700ms total)
+    setTimeout(() => {
+      setTransmitting(false);
       setEntered(true);
       videoRef.current?.play().catch(() => {});
-    }, 1050);
-
-    // 3. Overlay dissolve suave (~1700ms): usuário já vê o vídeo
-    setTimeout(() => setCrtOn(false), 1700);
+    }, 3700);
   };
 
   // Fade-out de áudio nos últimos 2s do vídeo
@@ -284,6 +357,9 @@ export default function LandingPage() {
           </div>
         </div>
       )}
+
+      {/* ── Tela de transmissão ── */}
+      {transmitting && <TransmittingScreen />}
 
       {/* ── Overlay CRT ligando ── */}
       {crtOn && (
