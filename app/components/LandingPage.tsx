@@ -233,6 +233,18 @@ export default function LandingPage() {
     if (ctx.state === 'suspended') await ctx.resume();
     audioCtxRef.current = ctx;
 
+    // iOS Safari: destravar o vídeo AQUI, dentro do gesto do usuário.
+    // play() + pause() imediato "priming" — libera autoplay com som para
+    // chamadas futuras de play(), mesmo fora do contexto de gesto.
+    if (videoRef.current) {
+      videoRef.current.play()
+        .then(() => {
+          videoRef.current!.pause();
+          videoRef.current!.currentTime = 0;
+        })
+        .catch(() => {});
+    }
+
     setPrePhase('transmitting');
     setTimeout(() => setPrePhase('screen-off'), 2500);
     setTimeout(() => setPrePhase('terminal'), 3100);
@@ -427,19 +439,25 @@ export default function LandingPage() {
         <TerminalScreen text={terminalText} />
       )}
 
-      {/* ── Seção de vídeo ── */}
+      {/* ── Seção de vídeo ──
+           Nunca usa display:none — iOS Safari não libera play() em elementos ocultos.
+           Visibilidade controlada por opacity + pointer-events.           ── */}
       <section
         className="w-full relative"
-        style={entered ? {
-          opacity: videoVisible ? 1 : 0,
-          transition: 'opacity 1.5s ease-in',
-        } : { display: 'none' }}
+        style={{
+          opacity: entered ? (videoVisible ? 1 : 0) : 0,
+          transition: entered ? 'opacity 1.5s ease-in' : 'none',
+          pointerEvents: entered ? 'auto' : 'none',
+          // Garante que a section não ocupe espaço visual antes de entrar
+          position: entered ? 'relative' : 'absolute',
+          width: '100%',
+        }}
       >
         <video
           ref={videoRef}
           src="/video/hero.mp4"
           playsInline
-          preload="metadata"
+          preload="auto"
           className="w-full block"
           onTimeUpdate={handleTimeUpdate}
           onEnded={handleVideoEnd}
